@@ -18,7 +18,7 @@ All communication between the user interface and the database is securely routed
 
 ```text
 React (Port 3000) ──> Express API (Port 5000) ──> MySQL (Port 3306)
-
+```
 
 ### Tech Stack
 
