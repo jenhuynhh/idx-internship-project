@@ -48,8 +48,8 @@ React (Port 3000) ──> Express API (Port 5000) ──> MySQL (Port 3306)
 
 ```bash
 docker run --name idx-mysql-local -p 3306:3306 \
-  -e MYSQL_ROOT_PASSWORD=rootpass \
-  -e MYSQL_DATABASE=rets \
+  -e MYSQL_ROOT_PASSWORD=[your password] \
+  -e MYSQL_DATABASE=[your database name] \
   -d mysql:8.0
 ```
 
@@ -80,8 +80,8 @@ cd ~/idx-internship
 Import each file:
 
 ```bash
-docker exec -i idx-mysql-local mysql -uroot -prootpass rets < rets_property.sql
-docker exec -i idx-mysql-local mysql -uroot -prootpass rets < rets_openhouse.sql
+docker exec -i idx-mysql-local mysql -uroot -p[your database password] rets < rets_property.sql
+docker exec -i idx-mysql-local mysql -uroot -p[your database password] rets < rets_openhouse.sql
 ```
 
 ### Step 4: Verify the Import
@@ -158,11 +158,11 @@ backend/
 **`.env`**
 
 ```
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=rootpass
-DB_NAME=rets
+DB_HOST=[database location]
+DB_PORT=[port to run server on]
+DB_USER=[database username]
+DB_PASSWORD=[database password]
+DB_NAME=[database name]
 PORT=5000
 ```
 
