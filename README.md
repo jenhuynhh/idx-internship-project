@@ -47,7 +47,7 @@ React (Port 3000) ──> Express API (Port 5000) ──> MySQL (Port 3306)
 ### Step 2: Start MySQL Container
 
 ```bash
-docker run --name idx-mysql-local -p 3306:3306 \
+docker run --name idx-mysql-local -p [database location] \
   -e MYSQL_ROOT_PASSWORD=[your password] \
   -e MYSQL_DATABASE=[your database name] \
   -d mysql:8.0
@@ -89,7 +89,7 @@ docker exec -i idx-mysql-local mysql -uroot -p[your database password] rets < re
 Open a MySQL shell:
 
 ```bash
-docker exec -it idx-mysql-local mysql -uroot -prootpass rets
+docker exec -it idx-mysql-local mysql -uroot -p[database password] rets
 ```
 
 Run these verification queries:
