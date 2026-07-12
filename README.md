@@ -375,6 +375,35 @@ Sanitize routing structures by binding key validation logic to catch empty param
 ### Step 3: Add Request Logging
 Inject a custom observation logger directly into your root stack setup within src/index.js (above active router mount points) to expose real-time application access details
 
+### Testing Live Server
+Start your development server so it can capture incoming traffic with your new performance request logger:
+
+```bash
+npm run dev
+```
+
+Once it is running on port 5000, you can open a new terminal window or tab and use curl to test the endpoints and verify their JSON responses directly from the command line:
+
+- Test Property Details (Valid ID):
+``` bash
+curl http://localhost:5000/api/properties/existing_id
+```
+
+- Test Open Houses (Valid ID):
+```bash
+curl http://localhost:5000/api/properties/existing_id
+```
+
+- Test 404 Error (Missing ID):
+```bash
+curl http://localhost:5000/api/properties/nonexistent_id
+```
+
+- Test 400 Error (Oversized ID over 50 characters):
+```bash
+curl http://localhost:5000/api/properties/id_that_exceeds_fifty_characters_long
+```
+
 ### Week 4 Checkpoint
 - [ ] `GET /api/properties/:id` returns full property object
 - [ ] `GET /api/properties/:id/openhouses` returns array of events
