@@ -2,6 +2,83 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db/mysql');
 
+function validateListingId(id) {
+    if (!id || id.trim() === '') {
+        return { valid: false, error: 'Listing ID is required' };
+    }
+    if (id.length > 50) {
+        return { valid: false, error: 'Listing ID is too long' };
+    }
+    if (!/^[a-zA-Z0-9]+$/.test(id)) {
+        return { valid: false, error: 'Listing ID contains invalid characters' };
+    }
+    return { valid: true };
+}
+
+router.get('/:id/openhouses', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const validation = validateListingId(id);
+        if (!validation.valid) {
+            return res.status(400).json({ error: validation.error });
+        }
+
+        const [propertyCheck] = await pool.query(
+            'SELECT L_ListingID FROM rets_property WHERE L_ListingID = ?',
+            [id]
+        );
+        if (propertyCheck.length === 0) {
+            return res.status(404).json({
+            error: 'Property not found',
+            message: `No property exists with ID: ${id}`
+        });
+    }
+    
+    const [openhouses] = await pool.query(
+        'SELECT * FROM rets_openhouse WHERE L_ListingID = ? ORDER BY OpenHouseDate, OH_StartTime',
+        [id]
+        );
+ 
+    res.json({
+        propertyId: id,
+        count: openhouses.length,
+        openhouses
+        });
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({ error: 'Failed to fetch open houses' });
+    }
+});
+
+router.get('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const validation = validateListingId(id);
+        if (!validation.valid) {
+            return res.status(400).json({ error: validation.error });
+        }
+
+        const [results] = await pool.query(
+            'SELECT * FROM rets_property WHERE L_ListingID = ?',
+            [id]
+        );
+    
+    if (results.length === 0) {
+        return res.status(404).json({
+        error: 'Property not found',
+        message: `No property exists with ID: ${id}`
+        });
+    }
+ 
+    res.json(results[0]);
+    } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).json({ error: 'Failed to fetch property details' });
+    }
+});
+
 router.get('/', async (req, res) => {
  try {
     const rawLimit = req.query.limit;
@@ -68,8 +145,8 @@ router.get('/', async (req, res) => {
     const [results] = await pool.query(dataQuery, [...values, limit, offset]);
     res.json({ total, limit, offset, results });
     } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ error: 'Failed to fetch properties' });
+        console.error('Database error:', error);
+        res.status(500).json({ error: 'Failed to fetch properties' });
     }
 });
 
