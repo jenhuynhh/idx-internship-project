@@ -411,3 +411,76 @@ curl http://localhost:5000/api/properties/id_that_exceeds_fifty_characters_long
 - [ ] Invalid listing ID returns 404 with helpful message
 - [ ] Malformed ID returns 400 error
 - [ ] Request logs appear in terminal with timestamps
+
+## Week 5: React Setup and Listings Page
+
+**Goal:** Create a React frontend that fetches and displays properties.
+
+### Step 1: Create React app
+
+```
+cd ~/idx-internship
+npx create-react-app frontend
+cd frontend
+npm start
+```
+
+Browser opens to http://localhost:3000
+
+### Step 2: Configure Proxy
+
+Edit frontend/package.json and add at the top level:
+
+```
+"proxy": "http://localhost:5000"
+```
+
+Make sure to restart React dev server after adding proxy (CTRL + C, then npm start)
+
+### Step 3: Create API Client Module
+
+Create frontend/src/api/client.js, then add your code for the API Client module
+
+### Step 4: Create Listings Page Component
+
+Create frontend/src/pages/directory:
+
+```
+mkdir src/pages
+touch /src/pages/pages/ListingsPage.js
+```
+
+Then implement your code for the frontend React ;listings page. 
+
+### Step 5: Add Styling
+
+Create frontend/src/pages/ListingsPage.css, and add your customization for your page with colors and style of your choosing.
+
+### Step 6: Update App.js
+
+Replace frontend/src/App.js:
+
+```bash
+import React from 'react';
+import ListingsPage from './pages/ListingsPage';
+import './App.css';
+function App() {
+ return (
+ <div className="App">
+ <ListingsPage />
+ </div>
+ );
+}
+export default App;
+```
+
+Make sure both servers are running:
+- Backend: cd backend && npm run dev
+- Frontend: cd frontend && npm start
+
+### Week 4 Checkpoint
+- [ ] React app runs on port 3000 without errors
+- [ ] Property grid displays caard with image/placeholder, price, address, city, beds/baths/sqft
+- [ ] API errors are caught and displayed to the user. Error message displays if backend is down
+- [ ] Property coount shows total
+- [ ] Cards have hover effect
