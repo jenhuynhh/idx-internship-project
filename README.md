@@ -478,7 +478,7 @@ Make sure both servers are running:
 - Backend: cd backend && npm run dev
 - Frontend: cd frontend && npm start
 
-### Week 4 Checkpoint
+### Week 5 Checkpoint
 - [ ] React app runs on port 3000 without errors
 - [ ] Property grid displays caard with image/placeholder, price, address, city, beds/baths/sqft
 - [ ] API errors are caught and displayed to the user. Error message displays if backend is down
