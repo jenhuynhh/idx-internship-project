@@ -412,6 +412,8 @@ curl http://localhost:5000/api/properties/id_that_exceeds_fifty_characters_long
 - [ ] Malformed ID returns 400 error
 - [ ] Request logs appear in terminal with timestamps
 
+---
+
 ## Week 5: React Setup and Listings Page
 
 **Goal:** Create a React frontend that fetches and displays properties.
@@ -484,3 +486,79 @@ Make sure both servers are running:
 - [ ] API errors are caught and displayed to the user. Error message displays if backend is down
 - [ ] Property coount shows total
 - [ ] Cards have hover effect
+
+---
+
+## Week 6: Filters UI + Introduction to Testing
+
+**Goal:** Build a filter form, wire it into the listings page, and write the first unit tests.
+
+### Step 1: Create Filter Component
+
+```
+mkdir src/components
+touch src/components/PropertyFilters.js
+touch src/components/PropertyFilters.css
+```
+
+`PropertyFilters.js` is a controlled form with six inputs: city, ZIP code, min price,
+max price, beds (dropdown), and baths (dropdown). All inputs are controlled by a single
+`filters` state object. On submit, empty values are stripped out so blank fields are not
+sent to the API. The component talks to its parent only through an `onSearch` callback.
+
+### Step 2: Integrate Filters into the Listings Page
+
+`ListingsPage` holds a `filters` state object and passes an `onSearch` handler to
+`PropertyFilters`. The data-loading effect depends on `filters`, so it re-fetches
+whenever a new search is submitted:
+
+- Search → updates `filters` state → effect re-runs → new results
+- Clear → resets the form and calls `onSearch({})` → reloads all properties
+
+The filter form stays visible during loading, and the results area shows one of:
+loading, error, "No properties found," or the property grid.
+
+### Step 3: Write API Client Tests
+
+Create `frontend/src/api/client.test.js`. Tests mock `global.fetch` so they run without
+a live backend:
+
+- Fetches properties with default parameters (hits `/api/properties`)
+- Appends filter parameters to the URL query string
+- Handles network errors (rejected fetch)
+- Throws on an error HTTP status (`ok: false`, e.g. 500)
+
+### Step 4: Write Component Tests
+
+Create `frontend/src/components/PropertyFilters.test.js` using React Testing Library:
+
+- Renders all six filter inputs
+- Calls `onSearch` with the entered values when Search is clicked
+- Clears the form and calls `onSearch({})` when Clear is clicked
+
+```
+npm install --save-dev @testing-library/react @testing-library/jest-dom
+@testing-library/user-event
+```
+
+### Running the Tests
+
+```bash
+cd frontend
+npm test
+```
+
+Press `a` to run all tests. Expected: 6 passing across 2 suites (3 API client, 3 component).
+
+### Week 6 Checkpoint
+
+- [ ] Filter form displays all six inputs
+- [ ] Submitting the form fetches results matching the filters
+- [ ] Multiple filters can be combined
+- [ ] Empty filter values are not sent to the API
+- [ ] Clear button resets the form and results
+- [ ] "No properties found" state shows a helpful message
+- [ ] `npm test` passes all tests
+
+
+

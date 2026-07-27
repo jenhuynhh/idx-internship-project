@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchProperties } from '../api/client';
 import './ListingsPage.css';
+import PropertyFilters from '../components/PropertyFilters';
 
 function parsePhotos(rawPhotos) {
   if (!rawPhotos) return [];
@@ -17,17 +18,18 @@ function ListingsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [total, setTotal] = useState(0);
+    const [filters, setFilters] = useState({});
     
     useEffect(() => {
         loadProperties();
-    }, []);
+    }, [filters]);
  
     async function loadProperties() {
         try {
             setLoading(true);
             setError(null);
 
-            const data = await fetchProperties({ limit: 20, offset: 0 });
+            const data = await fetchProperties({ ...filters, limit: 21, offset: 0 });
 
             setProperties(data.results);
             setTotal(data.total);
@@ -37,24 +39,32 @@ function ListingsPage() {
             setLoading(false);
         }
     }
-    if (loading) {
-        return <div className="loading">Loading properties...</div>;
-    }
-    if (error) {
-        return <div className="error">{error}</div>;
-    }
+    const handleSearch = (newFilters) => {
+        setFilters(newFilters);
+    };
     return (
         <div className="listings-page">
-        <h1>Property Listings</h1>
-        <p>Showing {properties.length} of {total} properties</p>
+            <h1>Property Listings</h1>
+            <PropertyFilters onSearch={handleSearch} />
 
-        <div className="property-grid">
-        {properties.map(property => (
-            <PropertyCard key={property.L_ListingID} property={property} />
-        ))}
+            {loading ? (
+                <div className="loading">Loading properties...</div>
+            ) : error ? (
+                <div className="error">{error}</div>
+            ) : properties.length === 0 ? (
+                <p className="no-results">No properties found matching your criteria.</p>
+            ) : (
+                <>
+                    <p>Showing {properties.length} of {total} properties</p>
+                    <div className="property-grid">
+                        {properties.map(property => (
+                            <PropertyCard key={property.L_ListingID} property={property} />
+                        ))}
+                    </div>
+                </>
+            )}
         </div>
-    </div>
- );
+    );
 }
 
 function PropertyCard({ property }) {
