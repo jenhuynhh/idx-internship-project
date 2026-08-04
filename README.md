@@ -560,5 +560,74 @@ Press `a` to run all tests. Expected: 6 passing across 2 suites (3 API client, 3
 - [ ] "No properties found" state shows a helpful message
 - [ ] `npm test` passes all tests
 
+---
 
+## Week 7: Pagination UI & Component Testing
 
+**Goal:** Add pagination controls so users can browse the full result set, and write
+comprehensive tests for the pagination logic.
+
+### Step 1: Add Pagination State to the Listings Page
+
+`ListingsPage` tracks the current page and page size:
+
+- `currentPage` (state) and `itemsPerPage` (fixed at 20)
+- The API `offset` is derived from the page: `offset = (currentPage - 1) * itemsPerPage`
+- The data-loading effect depends on both `filters` and `currentPage`, so it re-fetches
+  when either changes
+- Changing filters resets `currentPage` to 1 (so a new search always starts at page 1)
+- Changing pages scrolls the window to the top
+
+### Step 2: Build the Pagination Component
+
+Create the component and its styles:
+
+```
+touch src/components/Pagination.js
+touch src/components/Pagination.css
+```
+
+`Pagination` receives `currentPage`, `totalPages`, and an `onPageChange` callback. It renders:
+
+- Previous / Next buttons, disabled on the first / last page
+- Numbered page buttons, with the current page highlighted
+- Ellipsis (`...`) for large page counts, e.g. `1 ... 4 5 6 ... 24`
+- Nothing at all when there is only one page (`totalPages <= 1` returns `null`)
+
+The page-number logic handles four cases: all pages fit (no ellipsis), current page near
+the start, current page near the end, and current page in the middle.
+
+### Step 3: Results Summary
+
+The listings page shows a "Showing X–Y of Z properties" summary that reflects the current
+page, using the actual number of results returned for the end value.
+
+### Step 4: Write Pagination Tests
+
+Create `frontend/src/components/Pagination.test.js` using React Testing Library:
+
+- Renders Previous / Next and page number buttons
+- Previous is disabled on the first page; Next is disabled on the last page
+- Clicking Next / Previous / a page number calls `onPageChange` with the correct page
+- The current page has the `active` class
+- Renders nothing when there is only one page
+- **Debug challenge:** a test that renders every page position and asserts no page number
+  is ever rendered twice (guards against the "last page appears twice" bug)
+
+### Running the Tests
+
+```bash
+cd frontend
+npm test
+```
+
+### Week 7 Checkpoint
+
+- [ ] Pagination controls appear below the property grid
+- [ ] Previous is disabled on page 1; Next is disabled on the last page
+- [ ] Clicking a page number navigates to that page
+- [ ] Ellipsis renders correctly for large page counts
+- [ ] Results summary shows "Showing X–Y of Z properties"
+- [ ] Applying new filters resets to page 1
+- [ ] Pagination is hidden when there is only one page
+- [ ] All component tests pass
