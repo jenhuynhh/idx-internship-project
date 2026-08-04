@@ -21,7 +21,7 @@ function ListingsPage() {
     const [total, setTotal] = useState(0);
     const [filters, setFilters] = useState({});
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(20);
+    const [itemsPerPage] = useState(21);
 
     useEffect(() => {
         loadProperties();
