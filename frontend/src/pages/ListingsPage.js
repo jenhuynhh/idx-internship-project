@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { fetchProperties } from '../api/client';
+import { useNavigate } from 'react-router-dom';
 import './ListingsPage.css';
 import PropertyFilters from '../components/PropertyFilters';
 import Pagination from '../components/Pagination';
+import PropertyImageCarousel from '../components/PropertyImageCarousel';
 
 function parsePhotos(rawPhotos) {
   if (!rawPhotos) return [];
@@ -89,18 +91,17 @@ function ListingsPage() {
 }
 
 function PropertyCard({ property }) {
+    const navigate = useNavigate();
+    const handleClick = () => {
+        navigate(`/property/${property.L_ListingID}`);
+    };
+
     const photos = parsePhotos(property.L_Photos);
     return (
-        <div className="property-card">
+        <div className="property-card" onClick={handleClick}>
         <div className="property-image">
-        {photos.length > 0 ? (
-            <img src={photos[0]} alt={property.L_Address} />
-        ) : (
-        <div className="no-image">No photo</div>
-        )}
-
+            <PropertyImageCarousel photos={property.L_Photos} address={property.L_Address} />
         </div>
-
         <div className="property-info">
         <div className="price">
             {property.L_SystemPrice ? `$${property.L_SystemPrice.toLocaleString()}` : 'Price unavailable'}

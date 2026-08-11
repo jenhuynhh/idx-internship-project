@@ -631,3 +631,88 @@ npm test
 - [ ] Applying new filters resets to page 1
 - [ ] Pagination is hidden when there is only one page
 - [ ] All component tests pass
+
+---
+
+## Week 8: Property Detail Page (Routing, Gallery, Map & Open Houses)
+
+**Goal:** Build a full property detail page with client-side routing, a photo gallery
+with lightbox, a Google Map, and an open house schedule.
+
+### Step 1: Install React Router
+
+```bash
+cd frontend
+npm install react-router-dom
+```
+
+Set up routes in `App.js` with `BrowserRouter`, `Routes`, and `Route`:
+- `/` → `ListingsPage`
+- `/property/:id` → `PropertyDetailPage`
+
+### Step 2: Make Property Cards Clickable
+
+In `PropertyCard`, use the `useNavigate` hook so clicking a card navigates to
+`/property/:id`. The card's outer div gets an `onClick` handler.
+
+### Step 3: Build the Property Detail Page
+
+Create `src/pages/PropertyDetailPage.js`. It:
+- Reads the listing ID from the URL with `useParams`
+- Fetches the property and its open houses in parallel with `Promise.all`
+- Displays price, address, stats (beds/baths/sqft/year), description, map, and open houses
+- Handles loading, error (including 404 for missing properties), and a Back button
+
+### Step 4: Photo Gallery (Detail Page)
+
+Create `src/components/PropertyImageGallery.js`:
+- Main image + scrollable thumbnail strip (clicking a thumbnail changes the main image)
+- Clicking the main image opens a full-screen lightbox
+- Lightbox: left/right arrows navigate, closes on the ✕, click-outside, or the Escape key
+- Parses `L_Photos` defensively (falls back to an empty array on bad JSON)
+
+### Step 5: Photo Carousel (Listing Cards)
+
+Create `src/components/PropertyImageCarousel.js`:
+- Small photo slider on each listing card with prev/next arrows and a photo counter
+- Arrow clicks use `stopPropagation` so they do NOT trigger the card's navigation
+
+### Step 6: Property Map (Google Maps Embed)
+
+Create `src/components/PropertyMap.js` using the Google Maps Embed API (iframe, no npm package):
+- Only renders when both latitude and longitude are present
+- Includes a "Get Directions" link that opens Google Maps in a new tab
+
+Get a free API key from the Google Cloud Console, enable the **Maps Embed API**, and add
+the key to `frontend/.env` (never commit this file):
+
+```
+REACT_AOO_GOOGLE_MAPS_API_KEY=your_key_here
+```
+
+React env variables must start with `REACT_APP_`. Restart the dev server after editing `.env`.
+
+### Step 7: Open Houses
+
+Open house date, start/end time, and remarks display on the detail page. Remarks live
+inside the `all_data` JSON blob, so they are parsed out in the component (not the backend).
+If a property has no open houses, "No open houses scheduled" is shown.
+
+### Debug Challenges
+
+- **Open house remarks never appear:** remarks are nested inside the `all_data` JSON blob,
+  not a standalone column. Fixed by `JSON.parse`-ing `all_data` and reading `OpenHouseRemarks`.
+- **Lightbox does not close on Escape:** a keydown handler on a `<div>` never fires without
+  focus/tabIndex. Fixed by attaching the listener to `document` inside a `useEffect` (with
+  cleanup) so it fires globally while the lightbox is open.
+
+### Week 8 Checkpoint
+
+- [ ] Clicking a card navigates to `/property/[id]`; Back returns to the listings
+- [ ] Detail page shows price, address, stats, description, map, and open houses
+- [ ] Carousel arrows cycle photos without navigating to the detail page
+- [ ] Gallery thumbnails update the main image; clicking the main image opens the lightbox
+- [ ] Lightbox navigates with arrows and closes on Escape / click-outside / ✕
+- [ ] Map renders only when lat/lng are present; Get Directions opens Google Maps
+- [ ] Open house remarks display; "No open houses scheduled" shows when there are none
+- [ ] Visiting `/property/invalid-id` shows an error, not a crash
