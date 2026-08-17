@@ -6,16 +6,6 @@ import PropertyFilters from '../components/PropertyFilters';
 import Pagination from '../components/Pagination';
 import PropertyImageCarousel from '../components/PropertyImageCarousel';
 
-function parsePhotos(rawPhotos) {
-  if (!rawPhotos) return [];
-  try {
-    const parsed = JSON.parse(rawPhotos);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
 function ListingsPage() {
     const [properties, setProperties] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -24,29 +14,33 @@ function ListingsPage() {
     const [filters, setFilters] = useState({});
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(21);
+    const [sortBy, setSortBy] = useState('');
+    const [sortOrder, setSortOrder] = useState('ASC');
 
     useEffect(() => {
-        loadProperties();
-    }, [filters, currentPage]);
-
-    async function loadProperties() {
-        try {
-            setLoading(true);
-            setError(null);
-            const offset = (currentPage - 1) * itemsPerPage;
-            const data = await fetchProperties({ ...filters, limit: itemsPerPage, offset });
-            setProperties(data.results);
-            setTotal(data.total);
-        } catch (err) {
-            setError('Failed to load properties. Please try again.');
-        } finally {
-            setLoading(false);
+        async function loadProperties() {
+            try {
+                setLoading(true);
+                setError(null);
+                const offset = (currentPage - 1) * itemsPerPage;
+                const params = { ...filters, limit: itemsPerPage, offset, ...(sortBy && { sortBy, sortOrder })};
+                const data = await fetchProperties(params);
+                setProperties(data.results);
+                setTotal(data.total);
+            } catch (err) {
+                setError('Failed to load properties. Please try again.');
+            } finally {
+                setLoading(false);
+            }
         }
-    }
+        loadProperties();
+    }, [filters, currentPage, sortBy, sortOrder, itemsPerPage]);
 
     const handleSearch = (newFilters) => {
         setFilters(newFilters);
         setCurrentPage(1);
+        setSortBy('');
+        setSortOrder('ASC');
     };
 
     const handlePageChange = (newPage) => {
@@ -69,6 +63,30 @@ function ListingsPage() {
                 <p className="no-results">No properties found matching your criteria.</p>
             ) : (
                 <>
+                <div className="sort-controls">
+                    <label htmlFor="sortBy">Sort by: </label>
+                    <select
+                        id="sortBy"
+                        value={sortBy}
+                        onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
+                    >
+                        <option value="">Default</option>
+                        <option value="L_SystemPrice">Price</option>
+                        <option value="ListingContractDate">Date Listed</option>
+                        <option value="LM_Int2_3">Size (Sq Ft)</option>
+                        <option value="L_Keyword2">Bedrooms</option>
+                    </select>
+
+                    {sortBy && (
+                        <select
+                            value={sortOrder}
+                            onChange={(e) => { setSortOrder(e.target.value); setCurrentPage(1); }}
+                        >
+                            <option value="ASC">Low to High</option>
+                            <option value="DESC">High to Low</option>
+                        </select>
+                    )}
+                </div>    
                     <p>
                         Showing {(currentPage - 1) * itemsPerPage + 1}
                         –{(currentPage - 1) * itemsPerPage + properties.length} of {total} properties
@@ -96,7 +114,6 @@ function PropertyCard({ property }) {
         navigate(`/property/${property.L_ListingID}`);
     };
 
-    const photos = parsePhotos(property.L_Photos);
     return (
         <div className="property-card" onClick={handleClick}>
         <div className="property-image">

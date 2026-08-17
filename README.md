@@ -716,3 +716,79 @@ If a property has no open houses, "No open houses scheduled" is shown.
 - [ ] Map renders only when lat/lng are present; Get Directions opens Google Maps
 - [ ] Open house remarks display; "No open houses scheduled" shows when there are none
 - [ ] Visiting `/property/invalid-id` shows an error, not a crash
+
+---
+
+## Week 9: Advanced Feature (Sorting) & Performance Optimization
+
+**Goal:** Add a sorting feature to the property search, and analyze and optimize
+database query performance.
+
+### Part A: Sorting
+
+**Backend** — the `/api/properties` endpoint accepts `sortBy` and `sortOrder` query
+parameters:
+- `sortBy` is validated against a whitelist of real SQL column names
+  (`L_SystemPrice`, `ListingContractDate`, `LM_Int2_3`, `L_Keyword2`). An invalid
+  value returns a 400 error.
+- `sortOrder` is validated to `ASC` or `DESC` (defaults to `ASC`).
+- Column names cannot use parameterized placeholders in `ORDER BY`, so the whitelist
+  is what prevents SQL injection — only pre-approved column names ever reach the query.
+
+**Frontend** — a sort dropdown on the listings page:
+- Sends the real column name as `sortBy` so it matches the backend whitelist.
+- Sort persists across page changes (pagination does not reset it).
+- Sort resets to default when new filters are applied.
+- Changing the sort resets to page 1.
+
+### Part B: Performance Optimization
+
+**EXPLAIN analysis of the combined city + price filter:**
+
+| Column | Meaning |
+| --- | --- |
+| `type` | How rows are accessed. `range` = index range scan; `ref` = indexed lookup; `ALL` = full table scan (slowest). |
+| `key` | The index actually chosen for the query. |
+| `rows` | Estimated number of rows MySQL examines. |
+| `Extra` | Additional detail, e.g. "Using where" = filtering rows after the index lookup. |
+
+**Key finding — a function on an indexed column blocks the index:**
+
+The application query wraps the city column in `LOWER(TRIM(L_City))` for
+case-insensitive matching. EXPLAIN showed this prevents MySQL from using any city
+index:
+
+- **With `LOWER(TRIM())`:** used `idx_price` only, examined **17,946 rows**.
+- **Without the function** (`WHERE L_City = 'Beverly Hills'`): used `idx_L_City`,
+  examined **287 rows** — roughly a 62x reduction.
+
+The composite index `idx_city_price (L_City, L_SystemPrice)` exists but is unusable
+while the function wrapping remains. The proper fix is to normalize city casing at the
+data layer so the comparison can use the index directly. The `LOWER(TRIM())` approach
+is kept for now because the source data has inconsistent city casing, so this is a
+documented tradeoff between matching correctness and query performance.
+
+**Indexes on the table:** single-column indexes on city, zip, price, beds, and baths,
+plus the composite `idx_city_price`. Low-cardinality columns (beds ~27 distinct values,
+baths ~30) benefit far less from indexing than high-cardinality columns like price
+(~6,200 distinct values).
+
+**Request logging** includes response time in milliseconds: each request logs method,
+URL, status code, and duration (e.g. `GET /api/properties 200 - 14ms`).
+
+**React Error Boundary:** a class-component error boundary wraps the app and catches
+render errors, showing a recovery UI ("Something went wrong") with a reload option
+instead of a blank white screen.
+
+**Console warnings:** resolved outstanding warnings, including the `useEffect`
+missing-dependency warning on the listings page.
+
+### Week 9 Checkpoint
+- [x] Sorting works by price (both directions) and other fields
+- [x] Invalid `sortBy` returns a 400 error
+- [x] Sort persists across page changes and resets on new filters
+- [x] EXPLAIN output documented; index behavior analyzed
+- [x] Composite indexes added and analyzed
+- [x] Request logs show timing information
+- [x] Error boundary implemented and tested
+- [x] No console warnings

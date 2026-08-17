@@ -135,3 +135,34 @@
   font-size: 40px;
   margin-bottom: 12px;
 }
+
+.sort-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+}
+.sort-controls label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #a05a75;
+}
+.sort-controls select {
+  padding: 8px 14px;
+  border: 1.5px solid #ffd6e8;
+  border-radius: 10px;
+  background: #fff;
+  color: #6b4a5a;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.sort-controls select:hover {
+  border-color: #e56b9a;
+}
+.sort-controls select:focus {
+  outline: none;
+  border-color: #e56b9a;
+}

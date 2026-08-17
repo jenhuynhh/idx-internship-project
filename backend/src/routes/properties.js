@@ -86,7 +86,7 @@ router.get('/', async (req, res) => {
     const rawOffset = req.query.offset;
     const offset = rawOffset === undefined ? 0 : parseInt(rawOffset);
     
-    const { city, zipcode, minPrice, maxPrice, beds, baths } = req.query;
+    const { city, zipcode, minPrice, maxPrice, beds, baths, sortBy, sortOrder } = req.query;
     
     if (minPrice && isNaN(minPrice)) {
         return res.status(400).json({ error: 'minPrice must be a number' });
@@ -107,6 +107,13 @@ router.get('/', async (req, res) => {
         return res.status(400).json({ error: 'offset cannot be negative' });
     }
     
+    const validSortFields = ['L_SystemPrice', 'ListingContractDate', 'LM_Int2_3', 'L_Keyword2'];
+    const validOrders = ['ASC', 'DESC'];
+    if (sortBy && !validSortFields.includes(sortBy)) {
+        return res.status(400).json({ error: `Invalid sortBy value: ${sortBy}` });
+    }
+
+
     const conditions = [];
     const values = [];
     
@@ -138,10 +145,19 @@ router.get('/', async (req, res) => {
     const whereClause = conditions.length > 0
         ? 'WHERE ' + conditions.join(' AND ')
         : '';
+
+    let orderClause = '';
+    if (sortBy) {
+        const order = validOrders.includes(sortOrder?.toUpperCase())
+            ? sortOrder.toUpperCase()
+            : 'ASC';
+        orderClause = `ORDER BY ${sortBy} ${order}`;
+    }
+
     const countQuery = `SELECT COUNT(*) as total FROM rets_property ${whereClause}`;
     const [countResult] = await pool.query(countQuery, values);
     const total = countResult[0].total;
-    const dataQuery = `SELECT * FROM rets_property ${whereClause} LIMIT ? OFFSET ?`;
+    const dataQuery = `SELECT * FROM rets_property ${whereClause} ${orderClause} LIMIT ? OFFSET ?`;
     const [results] = await pool.query(dataQuery, [...values, limit, offset]);
     res.json({ total, limit, offset, results });
     } catch (error) {
