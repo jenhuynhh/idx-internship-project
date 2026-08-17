@@ -719,76 +719,79 @@ If a property has no open houses, "No open houses scheduled" is shown.
 
 ---
 
-## Week 9: Advanced Feature (Sorting) & Performance Optimization
+## Week 9: Advanced Features (Sorting + Favorites) & Performance Optimization
 
-**Goal:** Add a sorting feature to the property search, and analyze and optimize
-database query performance.
+**Goal:** Implement advanced features and optimize application performance. The project
+required one advanced feature; this build includes two (Sorting and Favorites).
 
-### Part A: Sorting
+### Advanced Feature 1: Sorting
 
-**Backend** — the `/api/properties` endpoint accepts `sortBy` and `sortOrder` query
-parameters:
+**Backend** — `/api/properties` accepts `sortBy` and `sortOrder` query parameters:
 - `sortBy` is validated against a whitelist of real SQL column names
-  (`L_SystemPrice`, `ListingContractDate`, `LM_Int2_3`, `L_Keyword2`). An invalid
-  value returns a 400 error.
-- `sortOrder` is validated to `ASC` or `DESC` (defaults to `ASC`).
-- Column names cannot use parameterized placeholders in `ORDER BY`, so the whitelist
-  is what prevents SQL injection — only pre-approved column names ever reach the query.
+  (`L_SystemPrice`, `ListingContractDate`, `LM_Int2_3`, `L_Keyword2`); an invalid value
+  returns a 400 error.
+- `sortOrder` is validated to `ASC`/`DESC` (defaults to `ASC`).
+- Because column names cannot use parameterized placeholders in `ORDER BY`, the whitelist
+  is what prevents SQL injection — only pre-approved column names reach the query.
 
 **Frontend** — a sort dropdown on the listings page:
-- Sends the real column name as `sortBy` so it matches the backend whitelist.
-- Sort persists across page changes (pagination does not reset it).
-- Sort resets to default when new filters are applied.
-- Changing the sort resets to page 1.
+- Sends the real column name so it matches the backend whitelist.
+- Sort persists across page changes and resets when new filters are applied.
 
-### Part B: Performance Optimization
+### Advanced Feature 2: Favorites
 
-**EXPLAIN analysis of the combined city + price filter:**
+Users can save properties using a heart button. Implemented with a `useFavorites` custom
+hook backed by `localStorage` (client-side only — the backend is not involved).
 
-| Column | Meaning |
-| --- | --- |
-| `type` | How rows are accessed. `range` = index range scan; `ref` = indexed lookup; `ALL` = full table scan (slowest). |
-| `key` | The index actually chosen for the query. |
-| `rows` | Estimated number of rows MySQL examines. |
-| `Extra` | Additional detail, e.g. "Using where" = filtering rows after the index lookup. |
+- `useFavorites` (in `src/hooks/`) exposes `favorites`, `isFavorite`, `toggleFavorite`,
+  `addFavorite`, and `removeFavorite`.
+- Each `PropertyCard` has an SVG heart button; the click uses `stopPropagation` so it does
+  not trigger card navigation.
+- A dedicated `/favorites` page (with a nav link from the listings page) fetches and
+  displays only saved properties, with a count ("N saved properties").
+- Unfavoriting removes a property from the favorites view immediately.
+- Favorites persist across page refreshes via `localStorage`.
 
-**Key finding — a function on an indexed column blocks the index:**
+**Known issue fixed — rapid-click race:** clicking several hearts quickly could drop some
+favorites, because separate `useFavorites` instances held independent stale copies of the
+list. Fixed by having each write read the current value from `localStorage` first, then
+update, so concurrent writes start from the true current state. (A fuller solution would
+share one favorites state via React Context to keep all components in sync in real time.)
 
-The application query wraps the city column in `LOWER(TRIM(L_City))` for
-case-insensitive matching. EXPLAIN showed this prevents MySQL from using any city
-index:
+### Performance Optimization
+
+**EXPLAIN analysis — a function on an indexed column blocks the index:**
+
+The application query wraps the city column in `LOWER(TRIM(L_City))` for case-insensitive
+matching. EXPLAIN showed this prevents index use:
 
 - **With `LOWER(TRIM())`:** used `idx_price` only, examined **17,946 rows**.
-- **Without the function** (`WHERE L_City = 'Beverly Hills'`): used `idx_L_City`,
-  examined **287 rows** — roughly a 62x reduction.
+- **Without the function** (`WHERE L_City = 'Beverly Hills'`): used `idx_L_City`, examined
+  **287 rows** — roughly a 62x reduction.
 
-The composite index `idx_city_price (L_City, L_SystemPrice)` exists but is unusable
-while the function wrapping remains. The proper fix is to normalize city casing at the
-data layer so the comparison can use the index directly. The `LOWER(TRIM())` approach
-is kept for now because the source data has inconsistent city casing, so this is a
-documented tradeoff between matching correctness and query performance.
+The composite index `idx_city_price (L_City, L_SystemPrice)` exists but is unusable while
+the function wrapping remains. The proper fix is to normalize city casing at the data layer.
+The `LOWER(TRIM())` approach is kept because the source data has inconsistent city casing —
+a documented tradeoff between matching correctness and query performance.
 
-**Indexes on the table:** single-column indexes on city, zip, price, beds, and baths,
-plus the composite `idx_city_price`. Low-cardinality columns (beds ~27 distinct values,
-baths ~30) benefit far less from indexing than high-cardinality columns like price
-(~6,200 distinct values).
+Low-cardinality columns (beds ~27 distinct values, baths ~30) benefit far less from
+indexing than high-cardinality columns like price (~6,200 distinct values).
 
-**Request logging** includes response time in milliseconds: each request logs method,
-URL, status code, and duration (e.g. `GET /api/properties 200 - 14ms`).
+**Request logging** includes response time in milliseconds: each request logs method, URL,
+status code, and duration (e.g. `GET /api/properties 200 - 14ms`).
 
-**React Error Boundary:** a class-component error boundary wraps the app and catches
-render errors, showing a recovery UI ("Something went wrong") with a reload option
-instead of a blank white screen.
+**React Error Boundary:** a class-component error boundary wraps the app and catches render
+errors, showing a recovery UI instead of a blank screen.
 
-**Console warnings:** resolved outstanding warnings, including the `useEffect`
-missing-dependency warning on the listings page.
+**Console warnings:** resolved all outstanding warnings (the `useEffect` dependency warning,
+an unused variable, and a missing `itemsPerPage` dependency).
 
 ### Week 9 Checkpoint
 - [x] Sorting works by price (both directions) and other fields
 - [x] Invalid `sortBy` returns a 400 error
 - [x] Sort persists across page changes and resets on new filters
+- [x] Favorites: heart button, favorites view, count, persistence, immediate removal
+- [x] Custom hook used (not inline localStorage in components)
 - [x] EXPLAIN output documented; index behavior analyzed
-- [x] Composite indexes added and analyzed
 - [x] Request logs show timing information
 - [x] Error boundary implemented and tested
-- [x] No console warnings
