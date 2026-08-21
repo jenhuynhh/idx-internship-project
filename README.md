@@ -795,3 +795,121 @@ an unused variable, and a missing `itemsPerPage` dependency).
 - [x] EXPLAIN output documented; index behavior analyzed
 - [x] Request logs show timing information
 - [x] Error boundary implemented and tested
+
+---
+
+## Week 10: Git Workflow and Code Organization
+
+**Goal:** Professional Git history and a well-organized, maintainable codebase.
+
+### Step 1: Initialize Git Repository
+
+```
+cd ~/idx-internship
+git init
+git add .
+git commit -m "Initial commit: working property search application"
+```
+
+### Step 2: Branching strategy
+Common branch types:
+- main: Production-ready code
+- develop: Integration branch for features
+- feature/*:New features (feature/pagination, feature/filters)
+- bugfix/*: Bug fixes
+- hotfix/*: Urgent production fixes
+
+Create develop branch:
+```
+git checkout -b develop
+```
+
+### Step 3: Create pull request template
+Create .github/pull_request_template.md:
+
+```
+## Description
+Brief description of changes
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Refactoring
+- [ ] Documentation
+## Testing
+- [ ] Tests pass locally
+- [ ] Added new tests for features
+- [ ] Manually tested in browser
+## Screenshots (if applicable)
+## Checklist
+- [ ] Code follows project style guidelines
+- [ ] Self-reviewed code
+- [ ] Commented complex logic
+- [ ] No console.logs or debugging code
+```
+
+### Step 5: Write good commit messages:
+Commit message format:
+
+```
+type(scope): subject
+body (optional)
+footer (optional)
+Examples:
+feat(filters): add price range filter
+fix(pagination): correct offset calculation for last page
+refactor(api): extract validation logic into helper functions
+docs(readme): add setup instructions
+test(pagination): add tests for edge cases
+```
+
+### Step 6: Improve folder structure:
+Organize into logical groups:
+
+```
+frontend/src/
+ api/
+  client.js
+ components/
+  PropertyCard.js
+  PropertyCard.css
+  PropertyFilters.js
+  PropertyFilters.css
+  Pagination.js
+  Pagination.css
+  ErrorBoundary.js
+ pages/
+  ListingsPage.js
+  ListingsPage.css
+  PropertyDetailPage.js
+  PropertyDetailPage.css
+ hooks/
+  useFavorites.js
+ utils/
+  api-helpers.js
+  formatting.js
+ App.js
+ App.css
+ index.js
+
+```
+
+### Step 8: Code cleanup
+Remove all:
+- console.log statements (except intentional logging)
+- Commented-out code
+- Unused imports
+- Unused variables
+Run linter:
+
+```
+cd frontend
+npm run lint
+# Fix auto-fixable issues
+npm run lint -- --fix
+```
+
+### Week 10 Checkpoint
+- [x] Git history tells a clear story of the project development
+- [x] Code is organized and linter passes
+- [x] You can walk through the folder structure and explain each file's responsibility
+

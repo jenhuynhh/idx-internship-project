@@ -38,6 +38,8 @@ function ListingsPage() {
         loadProperties();
     }, [filters, currentPage, sortBy, sortOrder, itemsPerPage]);
 
+    throw new Error('test');
+
     const handleSearch = (newFilters) => {
         setFilters(newFilters);
         setCurrentPage(1);
