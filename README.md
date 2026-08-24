@@ -800,116 +800,85 @@ an unused variable, and a missing `itemsPerPage` dependency).
 
 ## Week 10: Git Workflow and Code Organization
 
-**Goal:** Professional Git history and a well-organized, maintainable codebase.
+**Goal:** A professional Git history and a well-organized, maintainable codebase.
 
-### Step 1: Initialize Git Repository
+### Branching Strategy
 
-```
-cd ~/idx-internship
-git init
-git add .
-git commit -m "Initial commit: working property search application"
-```
+The project uses a branch structure:
+- **main** — production-ready code
+- **develop** — integration branch where finished features are merged
+- **feature/**, **refactor/** — short-lived branches for individual tasks, merged into
+  develop via pull requests
 
-### Step 2: Branching strategy
-Common branch types:
-- main: Production-ready code
-- develop: Integration branch for features
-- feature/*:New features (feature/pagination, feature/filters)
-- bugfix/*: Bug fixes
-- hotfix/*: Urgent production fixes
+Feature branches created and merged this week:
+- `refactor/cleanup-dead-files` — removed the unused CRA `logo.svg` and added the PR template
+- `refactor/add-lint-script` — added an npm lint script and fixed a `useEffect` dependency warning
+- `feature/add-proptypes` — added PropTypes validation to PropertyCard
 
-Create develop branch:
-```
-git checkout -b develop
-```
+Each was developed on its own branch, committed with a conventional message, and merged
+into `develop` through a pull request. `develop` was then promoted to `main`.
 
-### Step 3: Create pull request template
-Create .github/pull_request_template.md:
+### Pull Request Template
 
-```
-## Description
-Brief description of changes
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Refactoring
-- [ ] Documentation
-## Testing
-- [ ] Tests pass locally
-- [ ] Added new tests for features
-- [ ] Manually tested in browser
-## Screenshots (if applicable)
-## Checklist
-- [ ] Code follows project style guidelines
-- [ ] Self-reviewed code
-- [ ] Commented complex logic
-- [ ] No console.logs or debugging code
-```
+A template at `.github/pull_request_template.md` standardizes every PR with sections for
+description, type of change, testing, and a checklist.
 
-### Step 5: Write good commit messages:
-Commit message format:
+### Conventional Commits
 
-```
-type(scope): subject
-body (optional)
-footer (optional)
-Examples:
-feat(filters): add price range filter
-fix(pagination): correct offset calculation for last page
-refactor(api): extract validation logic into helper functions
-docs(readme): add setup instructions
-test(pagination): add tests for edge cases
-```
+Commits follow the format `type: subject` (optionally `type(scope): subject`). Examples
+from this project:
+- `refactor: extract parsePhotos util and PropertyCard component`
+- `refactor: remove unused logo.svg and add PR template`
+- `feat: add PropTypes validation to PropertyCard`
 
-### Step 6: Improve folder structure:
-Organize into logical groups:
+### Folder Structure
 
 ```
 frontend/src/
- api/
-  client.js
- components/
-  PropertyCard.js
-  PropertyCard.css
-  PropertyFilters.js
-  PropertyFilters.css
-  Pagination.js
-  Pagination.css
-  ErrorBoundary.js
- pages/
-  ListingsPage.js
-  ListingsPage.css
-  PropertyDetailPage.js
-  PropertyDetailPage.css
- hooks/
-  useFavorites.js
- utils/
-  api-helpers.js
-  formatting.js
- App.js
- App.css
- index.js
-
+api/
+client.js
+components/
+PropertyCard.js
+PropertyFilters.js
+Pagination.js
+PropertyImageGallery.js
+PropertyImageCarousel.js
+PropertyMap.js
+ErrorBoundary.js
+(+ matching .css and .test.js files)
+pages/
+ListingsPage.js
+PropertyDetailPage.js
+FavoritesPage.js
+hooks/
+useFavorites.js
+utils/
+parsePhotos.js
+App.js
+index.js
 ```
 
-### Step 8: Code cleanup
-Remove all:
-- console.log statements (except intentional logging)
-- Commented-out code
-- Unused imports
-- Unused variables
-Run linter:
 
-```
-cd frontend
-npm run lint
-# Fix auto-fixable issues
-npm run lint -- --fix
-```
+### Refactoring & Code Quality
+
+- Consolidated photo parsing into a single `utils/parsePhotos.js` (removing duplicated
+  inline `JSON.parse` logic across components — which also fixed an unguarded parse that
+  could crash on malformed data).
+- Extracted `PropertyCard` into its own component file so both the listings and favorites
+  pages reuse it instead of duplicating card markup.
+- Added PropTypes to `PropertyCard` to document and validate its props.
+
+### Linting
+
+An npm lint script (`eslint src --ext .js,.jsx`) was added. `npm run lint` passes with
+**0 problems** — no unused imports, unused variables, or dead code. Explanatory comments
+are kept; no commented-out code remains.
 
 ### Week 10 Checkpoint
-- [x] Git history tells a clear story of the project development
-- [x] Code is organized and linter passes
-- [x] You can walk through the folder structure and explain each file's responsibility
-
+- [x] Git history tells a clear story via conventional commits and pull requests
+- [x] Three feature branches created and merged into develop
+- [x] Pull request template at `.github/pull_request_template.md`
+- [x] PropertyCard is in its own file with PropTypes
+- [x] Folder structure organized into api / components / pages / hooks / utils
+- [x] `npm run lint` passes with no errors
+- [x] No console.logs, commented-out code, or unused imports
