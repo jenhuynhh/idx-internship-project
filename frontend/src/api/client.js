@@ -1,8 +1,9 @@
+import { buildQueryString } from '../utils/api-helpers';
 const API_BASE = ''; // Empty because of proxy
 
 export async function fetchProperties(params = {}) {
     try {
-        const query = new URLSearchParams(params).toString();
+        const query = buildQueryString(params).toString();
         const url = `${API_BASE}/api/properties${query ? '?' + query : ''}`;
 
         const response = await fetch(url);
