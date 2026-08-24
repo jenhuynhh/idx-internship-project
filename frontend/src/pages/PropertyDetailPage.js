@@ -25,25 +25,24 @@ function PropertyDetailPage() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        async function loadPropertyData() {
+            try {
+                setLoading(true);
+                setError(null);
+                const [propertyData, openHousesData] = await Promise.all([
+                    fetchPropertyDetail(id),
+                    fetchOpenHouses(id)
+                ]);
+                setProperty(propertyData);
+                setOpenHouses(openHousesData.openhouses || []);
+            } catch (err) {
+                setError(err.message || 'Failed to load property details');
+            } finally {
+                setLoading(false);
+            }
+        }
         loadPropertyData();
     }, [id]);
-
-    async function loadPropertyData() {
-        try {
-            setLoading(true);
-            setError(null);
-            const [propertyData, openHousesData] = await Promise.all([
-                fetchPropertyDetail(id),
-                fetchOpenHouses(id)
-            ]);
-            setProperty(propertyData);
-            setOpenHouses(openHousesData.openhouses || []);
-        } catch (err) {
-            setError(err.message || 'Failed to load property details');
-        } finally {
-            setLoading(false);
-        }
-    }
 
     if (loading) return <div className="loading">Loading property details...</div>;
     if (error) {
