@@ -1,15 +1,6 @@
 import { useState } from 'react';
 import './PropertyImageCarousel.css';
-
-function parsePhotos(rawPhotos) {
-    if (!rawPhotos) return [];
-    try {
-        const parsed = JSON.parse(rawPhotos);
-        return Array.isArray(parsed) ? parsed : [];
-    } catch {
-        return [];
-    }
-}
+import { parsePhotos } from '../utils/parsePhotos';
 
 function PropertyImageCarousel({ photos: rawPhotos, address }) {
     const photos = parsePhotos(rawPhotos);

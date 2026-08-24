@@ -1,19 +1,13 @@
 // src/components/PropertyImageGallery.js
 import { useState, useEffect } from 'react';
+import { parsePhotos } from '../utils/parsePhotos';
 import './PropertyImageGallery.css';
 
 function PropertyImageGallery({ photos, address }) {
     const [activeIndex, setActiveIndex] = useState(0);
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [lightboxIndex, setLightboxIndex] = useState(0);
-
-    let photoList = [];
-    try {
-        const parsed = photos ? JSON.parse(photos) : [];
-        photoList = Array.isArray(parsed) ? parsed : [];
-    } catch {
-        photoList = [];
-    }
+    const photoList = parsePhotos(photos);
 
     // Close on Escape / navigate with arrows — attached to document so it fires without focus
     useEffect(() => {
