@@ -107,16 +107,23 @@ router.get('/', async (req, res) => {
         return res.status(400).json({ error: 'offset cannot be negative' });
     }
     
+    // Whitelist the sortable columns. ORDER BY can't use parameterized placeholders,
+    // so the column name is concatenated into the query — validating against a fixed
+    // list is what prevents SQL injection here.
     const validSortFields = ['L_SystemPrice', 'ListingContractDate', 'LM_Int2_3', 'L_Keyword2'];
     const validOrders = ['ASC', 'DESC'];
     if (sortBy && !validSortFields.includes(sortBy)) {
         return res.status(400).json({ error: `Invalid sortBy value: ${sortBy}` });
     }
 
-
+    // Build the WHERE clause dynamically: only add a condition for filters the user
+    // actually provided. Values go into a parameterized array (never string-concatenated)
+    // to prevent SQL injection.
     const conditions = [];
     const values = [];
     
+    // City casing is inconsistent in the data ("portland", "Portland", "PORTLAND"),
+    // so compare both sides lowercased and trimmed.
     if (city) {
         conditions.push('LOWER(TRIM(L_City)) = LOWER(TRIM(?))');
         values.push(city);

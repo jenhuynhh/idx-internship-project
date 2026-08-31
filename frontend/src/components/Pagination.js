@@ -15,7 +15,8 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
         }
     };
  
-    // Generate page numbers to show
+    // Decide which page numbers to show. For large page counts we can't show them all,
+    // so we show the first, last, current, and nearby pages with ellipsis gaps.
     const getPageNumbers = () => {
     const pages = [];
     const maxPagesToShow = 7;
@@ -26,7 +27,8 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
             pages.push(i);
         }
     } else {
-        // Show first, last, current, and nearby pages
+        // Middle case: show page 1, ellipsis, the pages around the current one, ellipsis, last page —
+        // this keeps the control a fixed width no matter how many total pages there are.
         if (currentPage <= 4) {
             for (let i = 1; i <= 5; i++) pages.push(i);
                 pages.push('...');
