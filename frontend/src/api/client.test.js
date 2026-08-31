@@ -1,4 +1,4 @@
-import { fetchProperties } from './client';
+import { fetchProperties, fetchPropertyDetail, fetchOpenHouses } from './client';
 
 describe('fetchProperties API module', () => {
   beforeEach(() => {
@@ -41,12 +41,45 @@ describe('fetchProperties API module', () => {
 
   test('throws an error when the server responds with an error status', async () => {
     global.fetch.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        json: async () => ({}),
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+      json: async () => ({}),
     });
 
     await expect(fetchProperties({})).rejects.toThrow('HTTP 500');
+  });
+
+  // --- fetchPropertyDetail tests ---
+  test('fetchPropertyDetail returns a property on success', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ L_ListingID: '123', L_Address: '123 Test St' }),
     });
+
+    const data = await fetchPropertyDetail('123');
+    expect(data.L_ListingID).toBe('123');
+  });
+
+  test('fetchPropertyDetail throws "Property not found" on 404', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      statusText: 'Not Found',
+      json: async () => ({}),
+    });
+
+    await expect(fetchPropertyDetail('999')).rejects.toThrow('Property not found');
+  });
+
+  // --- fetchOpenHouses tests ---
+  test('fetchOpenHouses returns open house data on success', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ openhouses: [{ OpenHouseDate: '2026-06-16' }] }),
+    });
+
+    const data = await fetchOpenHouses('123');
+    expect(data.openhouses).toHaveLength(1);
+  });
 });

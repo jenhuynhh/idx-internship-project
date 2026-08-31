@@ -4,6 +4,10 @@ A Zillow/Redfin-style property search experience backed by real MLS data. This a
 
 ---
 
+## Screenshot
+
+![Property listings page](screenshots/listings.png)
+
 ## Project Overview
 
 This project is a full-stack property search experience backed by real MLS data. The finished application includes:
@@ -20,14 +24,215 @@ All communication between the user interface and the database is securely routed
 React (Port 3000) ──> Express API (Port 5000) ──> MySQL (Port 3306)
 ```
 
-### Tech Stack
+## Tech Stack
 
-| Layer    | Technology                    |
-|----------|-------------------------------|
-| Frontend | React (Create React App)      |
-| Backend  | Node.js + Express             |
-| Database | MySQL 8 running in Docker     |
-| Testing  | Jest + React Testing Library + Supertest |
+| Layer | Technology | Version |
+|-------|-----------|---------|
+| Frontend | React (Create React App) | 19.2.7 |
+| Routing | React Router | 7.18.2 |
+| Backend | Node.js + Express | Express 5.2.1 |
+| Database | MySQL (in Docker) | MySQL 8 |
+| DB driver | mysql2 | 3.22.5 |
+| Testing | Jest, React Testing Library, Supertest | — |
+| Runtime | Node.js | v26.0.0 |
+
+---
+
+## Quick Start (from a fresh machine)
+
+**Prerequisites:** Node.js, Docker Desktop, and Git installed.
+
+**1. Clone the repo**
+```bash
+git clone https://github.com/jenhuynhh/idx-internship-project.git
+cd idx-internship-project
+```
+
+**2. Start the database (Docker)**
+```bash
+docker run --name idx-mysql-local -p 3306:3306 \
+  -e MYSQL_ROOT_PASSWORD=your_password \
+  -e MYSQL_DATABASE=rets \
+  -d mysql:8.0
+```
+Import the two provided SQL files:
+```bash
+docker exec -i idx-mysql-local mysql -uroot -pyour_password rets < rets_property.sql
+docker exec -i idx-mysql-local mysql -uroot -pyour_password rets < rets_openhouse.sql
+```
+
+**3. Start the backend**
+```bash
+cd backend
+npm install
+# create backend/.env (see below), then:
+npm run dev
+```
+Backend runs on http://localhost:5000
+
+`backend/.env`:
+
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=rets
+PORT=5000
+```
+
+**4. Start the frontend**
+```bash
+cd frontend
+npm install
+# create frontend/.env (see below), then:
+npm start
+```
+Frontend runs on http://localhost:3000
+
+`frontend/.env`:
+
+```
+REACT_APP_GOOGLE_MAPS_API_KEY=your_google_maps_embed_api_key
+```
+
+
+Open http://localhost:3000 once all three are running.
+
+---
+
+## API Reference
+
+Base URL: `http://localhost:5000`
+
+### `GET /api/health`
+Verifies the server and database connection.
+
+**Response 200:**
+```json
+{ "status": "ok", "database": "connected" }
+```
+
+### `GET /api/properties`
+Paginated, filterable, sortable list of properties.
+
+**Query params (all optional):** `city`, `zipcode`, `minPrice`, `maxPrice`, `beds`, `baths`, `sortBy`, `sortOrder`, `limit`, `offset`
+
+**Example request:**
+
+```
+GET /api/properties?city=Beverly Hills&minPrice=1000000&beds=3&sortBy=L_SystemPrice&sortOrder=DESC&limit=20&offset=0
+```
+
+**Response 200:**
+```json
+{
+  "total": 287,
+  "limit": 20,
+  "offset": 0,
+  "results": [
+    {
+      "L_ListingID": "1118422731",
+      "L_Address": "1461 Laurel Way",
+      "L_City": "Beverly Hills",
+      "L_State": "CA",
+      "L_SystemPrice": 3950000,
+      "L_Keyword2": 4,
+      "LM_Dec_3": "5.0",
+      "LM_Int2_3": 3677
+    }
+  ]
+}
+```
+
+**Response 400 (invalid input):**
+```json
+{ "error": "limit must be between 1 and 100" }
+```
+
+### `GET /api/properties/:id`
+Single property by listing ID.
+
+**Example:** `GET /api/properties/1118422731`
+
+**Response 200:** the full property object.
+
+**Response 404:**
+```json
+{ "error": "Property not found", "message": "No property exists with ID: 999" }
+```
+
+**Response 400:** for malformed IDs (non-alphanumeric or over 50 characters).
+
+### `GET /api/properties/:id/openhouses`
+Open house events for a property, ordered by date and start time.
+
+**Example:** `GET /api/properties/1077426281/openhouses`
+
+**Response 200:**
+```json
+{
+  "propertyId": "1077426281",
+  "count": 1,
+  "openhouses": [
+    {
+      "L_ListingID": "1077426281",
+      "OpenHouseDate": "2026-06-16",
+      "OH_StartTime": "09:00:00",
+      "OH_EndTime": "23:00:00"
+    }
+  ]
+}
+```
+Returns `count: 0` with an empty array when there are no open houses; returns 404 if the property doesn't exist.
+
+---
+
+## Database Schema
+
+Two tables, linked by `L_ListingID`.
+
+**`rets_property`** — property listings
+| Column | Represents |
+|--------|-----------|
+| `L_ListingID` | Unique listing ID (primary lookup key) |
+| `L_Address`, `L_City`, `L_State`, `L_Zip` | Location |
+| `L_SystemPrice` | List price |
+| `L_Keyword2` | Bedrooms |
+| `LM_Dec_3` | Bathrooms |
+| `LM_Int2_3` | Square footage |
+| `L_Photos` | JSON array of photo URLs (not always valid JSON — parsed defensively) |
+| `LMD_MP_Latitude`, `LMD_MP_Longitude` | Geo coordinates |
+| `L_Remarks` | Listing description |
+| `ListingContractDate`, `YearBuilt`, `LotSizeAcres` | Additional details |
+
+**`rets_openhouse`** — open house events
+| Column | Represents |
+|--------|-----------|
+| `L_ListingID` | Foreign key → `rets_property.L_ListingID` |
+| `OpenHouseDate`, `OH_StartTime`, `OH_EndTime` | Event scheduling |
+| `all_data` | JSON blob containing `OpenHouseRemarks` and other fields |
+
+**Relationship:** one property has many open houses, joined on `L_ListingID`. The provided data contains ~741 orphan open house records whose `L_ListingID` has no matching property.
+
+---
+
+## Known Issues & Future Improvements
+
+**Known issues (from the provided data):**
+- **Expired photo URLs** — some listings (especially older/sold ones) have photo URLs that have expired, so images may fail to load. The UI degrades gracefully to a placeholder.
+- **Orphan open houses** — ~741 open house records reference listing IDs not present in `rets_property`; requesting those returns a 404.
+- **Inconsistent city casing** — city names vary in casing, so queries use `LOWER(TRIM())`, which is correct but prevents the city index from being used (documented performance tradeoff).
+- **Junk price data** — a few listings have placeholder prices (e.g. $1 or unrealistically high values).
+
+**Future improvements:**
+- Normalize city casing at the data layer so the city index can be used (would reduce rows examined ~62x on combined filters).
+- Share favorites state via React Context for real-time cross-component sync (currently reads localStorage per write).
+- Add a batch endpoint (`GET /api/properties?ids=...`) so the favorites page fetches in one request instead of one per favorite.
+- Increase test coverage on page components (ListingsPage, PropertyDetailPage, FavoritesPage).
+
+---
+
 
 ---
 
@@ -882,3 +1087,57 @@ are kept; no commented-out code remains.
 - [x] Folder structure organized into api / components / pages / hooks / utils
 - [x] `npm run lint` passes with no errors
 - [x] No console.logs, commented-out code, or unused imports
+
+---
+
+## Week 11: Comprehensive Testing & Documentation
+
+**Goal:** Reach 70%+ test coverage on critical paths and write a complete README.
+
+### Backend Tests (Jest + Supertest)
+
+Created `backend/src/routes/properties.test.js` with the database pool mocked
+(`jest.mock`), so tests run without a live MySQL connection. To make the Express app
+importable for testing, `src/app.js` (app setup) was split from `src/index.js`
+(server startup).
+
+Tests cover all three route handlers:
+- `GET /api/properties` — pagination, invalid input (400), city filter, price range
+- `GET /api/properties/:id` — success and 404
+- `GET /api/properties/:id/openhouses` — with results and empty results
+
+### Frontend Tests (React Testing Library)
+
+Added `PropertyCard.test.js` (renders property data, navigates on click) and expanded
+`client.test.js` to cover `fetchPropertyDetail` (success + 404) and `fetchOpenHouses`.
+Combined with the existing PropertyFilters and Pagination suites, all required components
+are tested.
+
+### Coverage
+
+Coverage meets the 70% target on all critical files:
+
+| File | Statement Coverage |
+|------|-------------------|
+| `properties.js` (backend routes) | 72% |
+| `client.js` (API client) | 85% |
+| `PropertyFilters.js` | 100% |
+| `Pagination.js` | 92% |
+| `PropertyCard.js` | 80% |
+
+All 29 tests pass (8 backend, 21 frontend). Run with `npm test` in each folder;
+coverage with `npm test -- --coverage`.
+
+### Documentation
+
+Added a consolidated reference section at the top of this README covering the tech stack
+(with versions), a fresh-machine setup guide, a full API reference with example requests
+and responses, the database schema, and known issues. The weekly development log below
+documents how each part was built.
+
+### Week 11 Checkpoint
+- [x] Backend tests for all properties route handlers (mocked DB)
+- [x] Frontend tests for PropertyFilters, Pagination, and PropertyCard
+- [x] 70%+ coverage on critical files
+- [x] `npm test` passes in both backend/ and frontend/
+- [x] Comprehensive README with setup, API reference, schema, and known issues
