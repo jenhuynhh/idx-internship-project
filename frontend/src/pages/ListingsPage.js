@@ -23,6 +23,7 @@ function ListingsPage() {
             try {
                 setLoading(true);
                 setError(null);
+                // offset tells the API how many rows to skip. Page 1 skips 0, page 2 skips itemsPerPage, etc.
                 const offset = (currentPage - 1) * itemsPerPage;
                 const params = { ...filters, limit: itemsPerPage, offset, ...(sortBy && { sortBy, sortOrder })};
                 const data = await fetchProperties(params);
